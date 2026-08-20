@@ -487,6 +487,14 @@ async function kvSet(key, value){
   });
 }
 
+async function kvDelete(key){
+  await fetch(API_BASE_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({ action:'delete', key })
+  });
+}
+
 // Personal "remember this device" data — a real website can use localStorage safely.
 function loadMyProfile(){
   try{
@@ -1127,10 +1135,15 @@ async function render(){
       } else {
         for(const pl of state.players){
           const n = pl.entries || 1;
+          html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; margin:14px 0 6px;">
+              <span style="font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold);">${pl.name} <span style="color:rgba(243,240,230,0.4); text-transform:none; letter-spacing:0;">— ${n} entr${n>1?'ies':'y'}, $${ENTRY_PRICE*n}</span></span>
+              <button class="btn-danger admin-remove-player" data-email="${pl.email}" data-name="${pl.name}" data-entries="${n}">Remove Player</button>
+            </div>
+          `;
           for(let i=1; i<=n; i++){
             const pPicks = ((state.picks[pl.email]||{})[i]||[]).slice().sort((a,b)=>a.period-b.period);
-            const label = n>1 ? `${pl.name} (Entry ${i})` : pl.name;
-            html += `<div style="font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin:14px 0 6px;">${label} <span style="color:rgba(243,240,230,0.4); text-transform:none; letter-spacing:0;">— $${ENTRY_PRICE}</span></div>`;
+            if(n>1) html += `<div style="font-size:11px; color:rgba(243,240,230,0.5); margin-bottom:4px;">Entry ${i}</div>`;
             if(pPicks.length === 0){
               html += `<div class="empty-note" style="padding:0 0 6px;">No picks yet.</div>`;
             } else {
@@ -1198,6 +1211,28 @@ async function render(){
           const per = Number(btn.dataset.period);
           state.pctReleases[per] = !state.pctReleases[per];
           await savePctReleases();
+          render();
+        });
+      });
+    }
+    if(state.adminSubTab === 'all'){
+      content.querySelectorAll('.admin-remove-player').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const email = btn.dataset.email, pname = btn.dataset.name, n = Number(btn.dataset.entries);
+          if(btn.dataset.confirming !== 'yes'){
+            btn.dataset.confirming = 'yes';
+            btn.textContent = `Confirm remove ${pname}?`;
+            setTimeout(()=>{ if(btn.dataset.confirming==='yes'){ btn.dataset.confirming=''; btn.textContent='Remove Player'; } }, 4000);
+            return;
+          }
+          btn.disabled = true;
+          btn.textContent = 'Removing…';
+          for(let i=1; i<=n; i++){
+            await kvDelete('picks:' + email + ':' + i);
+          }
+          state.players = state.players.filter(p=>p.email !== email);
+          await savePlayersList();
+          delete state.picks[email];
           render();
         });
       });
