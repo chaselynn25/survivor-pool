@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Power 4 Survivor</title>
+<style>
+  :root{
+    --turf:#16352A;
+    --turf-dark:#0E241C;
+    --chalk:#F3F0E6;
+    --gold:#D2A34C;
+    --gold-dim:#8A6E33;
+    --red:#B84438;
+    --line: rgba(243,240,230,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 42px),
+      linear-gradient(180deg, var(--turf-dark), var(--turf));
+    color:var(--chalk);
+    font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:20px 16px 60px;}
+
+  /* ---- Scoreboard header ---- */
+  .board{
+    border:3px solid var(--gold-dim);
+    border-radius:6px;
+    background: linear-gradient(180deg, #0B1A14, #0F241B);
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.4);
+    padding:22px 20px 18px;
+    margin-bottom:22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .board::before{
+    content:"";
+    position:absolute; inset:0;
+    background: radial-gradient(circle at 15% 10%, rgba(210,163,76,0.10), transparent 45%);
+    pointer-events:none;
+  }
+  .board h1{
+    margin:0;
+    font-size: clamp(26px, 6vw, 40px);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--gold);
+    text-shadow: 0 2px 0 rgba(0,0,0,0.5);
+  }
+  .board .sub{
+    margin-top:4px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    font-size:12px;
+    color: rgba(243,240,230,0.6);
+  }
+  .rule-strip{
+    margin-top:14px;
+    padding-top:12px;
+    border-top:1px dashed var(--line);
+    font-size:13px;
+    line-height:1.6;
+    color: rgba(243,240,230,0.85);
+  }
+  .rule-strip b{color:var(--gold);}
+
+  /* ---- Player select bar ---- */
+  .player-bar{
+    display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+    margin-bottom:20px;
+  }
+  select, input[type=text], input[type=number]{
+    background: var(--turf-dark);
+    border:1px solid var(--line);
+    color:var(--chalk);
+    padding:10px 12px;
+    border-radius:4px;
+    font-size:14px;
+    font-family:inherit;
+  }
+  select:focus, input:focus{outline:2px solid var(--gold); outline-offset:1px;}
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+    border-radius:4px;
+    padding:10px 16px;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+  }
+  .btn-gold{background:var(--gold); color:#1c1204;}
+  .btn-gold:hover{background:#e0b25c;}
+  .btn-gold:disabled{background:#5c5138; color:#a9a08a; cursor:not-allowed;}
+  .btn-ghost{background:transparent; color:var(--chalk); border:1px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--gold); color:var(--gold);}
+  .btn-danger{background:transparent; color:var(--red); border:1px solid rgba(184,68,56,0.5); padding:6px 10px; font-size:11px;}
+  .btn-danger:hover{background:rgba(184,68,56,0.15);}
+
+  /* ---- Tabs ---- */
+  .tabs{display:flex; gap:4px; margin-bottom:16px; border-bottom:1px solid var(--line);}
+  .tab{
+    padding:10px 16px;
+    font-size:12px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    font-weight:700;
+    color: rgba(243,240,230,0.5);
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    margin-bottom:-1px;
+  }
+  .tab.active{color:var(--gold); border-bottom-color:var(--gold);}
+
+  .panel{
+    background: rgba(0,0,0,0.18);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:18px;
+  }
+
+  /* ---- Pick form ---- */
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block; font-size:11px; text-transform:uppercase; letter-spacing:1.5px;
+    color:var(--gold); margin-bottom:6px;
+  }
+  .field select, .field input{width:100%;}
+  .form-row{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:520px){ .form-row{grid-template-columns:1fr;} }
+  .warn{
+    font-size:12px; color:var(--red); margin-top:6px; min-height:16px;
+  }
+
+  /* ---- Weekly log ---- */
+  .pick-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    margin-bottom:8px;
+    background: rgba(255,255,255,0.02);
+  }
+  .pick-row .wk{
+    font-weight:800; color:var(--gold); font-size:13px; width:56px;
+  }
+  .pick-row .matchup{flex:1; font-size:14px;}
+  .pick-row .matchup .vs{color:rgba(243,240,230,0.5); font-size:11px; margin:0 6px;}
+  .empty-note{color:rgba(243,240,230,0.5); font-size:13px; padding:10px 2px;}
+
+  /* ---- Team availability grid ---- */
+  .conf-block{margin-bottom:16px;}
+  .conf-title{
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    color: rgba(243,240,230,0.55); margin-bottom:8px; font-weight:700;
+  }
+  .chip-grid{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{
+    font-size:12px;
+    padding:6px 10px;
+    border-radius:3px;
+    border:1px solid var(--line);
+    background: rgba(255,255,255,0.03);
+    color: var(--chalk);
+  }
+  .chip.used-team{
+    background: rgba(184,68,56,0.18);
+    border-color: rgba(184,68,56,0.4);
+    color: rgba(243,240,230,0.55);
+    text-decoration: line-through;
+  }
+  .chip.used-opp{
+    border-color: var(--gold-dim);
+    box-shadow: inset 0 0 0 1px rgba(210,163,76,0.25);
+  }
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:11px; color:rgba(243,240,230,0.6); margin-bottom:14px;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .dot{width:9px; height:9px; border-radius:2px; display:inline-block;}
+
+  /* ---- Standings ---- */
+  .standing-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px; border:1px solid var(--line); border-radius:4px; margin-bottom:8px;
+  }
+  .standing-row .name{font-weight:700;}
+  .standing-row .meta{font-size:12px; color:rgba(243,240,230,0.6);}
+  .status-alive{color:#7CB88F; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:1px;}
+  .status-out{color:var(--red); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:1px;}
+
+  /* ---- Reveal / results ---- */
+  .reveal-row.correct{ background:rgba(76,175,110,0.16); border-color:rgba(76,175,110,0.45); }
+  .reveal-row.wrong{ background:rgba(184,68,56,0.16); border-color:rgba(184,68,56,0.45); }
+  .pct-bar-wrap{ margin-bottom:8px; }
+  .pct-bar-label{ display:flex; justify-content:space-between; font-size:12px; margin-bottom:3px; }
+  .pct-bar-track{ height:8px; border-radius:4px; background:rgba(255,255,255,0.06); overflow:hidden; }
+  .pct-bar-fill{ height:100%; background:var(--gold); }
+
+  .loading{padding:40px; text-align:center; color:rgba(243,240,230,0.5);}
+  .spinner{
+    width:28px; height:28px; margin:0 auto 14px;
+    border:3px solid rgba(210,163,76,0.25);
+    border-top-color:var(--gold);
+    border-radius:50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="board">
+    <h1>Power 4 Survivor</h1>
+    <div class="sub">ACC &middot; Big Ten &middot; Big 12 &middot; SEC &middot; Notre Dame</div>
+    <div class="rule-strip">
+      Each week, pick one team to win. <b>Pick a team once, ever.</b> Also pick who you're taking them
+      <i>against</i> — <b>you can only pick against a given opponent once</b> too, so once you've used
+      Missouri as an opponent, no other pick can be "vs. Missouri" again.
+    </div>
+  </div>
+
+  <div id="app">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div id="loading-msg">Loading pool…</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const TEAMS = {
+  "ACC": ["Boston College","California","Clemson","Duke","Florida State","Georgia Tech","Louisville","Miami","NC State","North Carolina","Pittsburgh","SMU","Stanford","Syracuse","Virginia","Virginia Tech","Wake Forest"],
+  "Big Ten": ["Illinois","Indiana","Iowa","Maryland","Michigan","Michigan State","Minnesota","Nebraska","Northwestern","Ohio State","Oregon","Penn State","Purdue","Rutgers","UCLA","USC","Washington","Wisconsin"],
+  "Big 12": ["Arizona","Arizona State","Baylor","BYU","Cincinnati","Colorado","Houston","Iowa State","Kansas","Kansas State","Oklahoma State","TCU","Texas Tech","UCF","Utah","West Virginia"],
+  "SEC": ["Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Mississippi State","Missouri","Oklahoma","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt"],
+  "Independent": ["Notre Dame"]
+};
+const ALL_TEAMS = Object.values(TEAMS).flat().sort();
+
+// Each team's brand color + short badge text. Rendered as inline colored badges
+// (no external image requests) so they always display regardless of network policy.
+const TEAM_BADGE = {
+  "Boston College":["BC","8C2232"], "California":["CAL","003262"], "Clemson":["CLEM","F56600"],
+  "Duke":["DUKE","003087"], "Florida State":["FSU","782F40"], "Georgia Tech":["GT","B3A369"],
+  "Louisville":["LOU","AD0000"], "Miami":["MIA","F47321"], "NC State":["NCST","CC0000"],
+  "North Carolina":["UNC","7BAFD4"], "Pittsburgh":["PITT","003594"], "SMU":["SMU","C8102E"],
+  "Stanford":["STAN","8C1515"], "Syracuse":["SYR","D44500"], "Virginia":["UVA","232D4B"],
+  "Virginia Tech":["VT","630031"], "Wake Forest":["WAKE","9E7E38"],
+  "Illinois":["ILL","E84A27"], "Indiana":["IND","990000"], "Iowa":["IOWA","FFCD00"],
+  "Maryland":["MD","E21833"], "Michigan":["MICH","00274C"], "Michigan State":["MSU","18453B"],
+  "Minnesota":["MINN","7A0019"], "Nebraska":["NEB","E41C38"], "Northwestern":["NW","4E2A84"],
+  "Ohio State":["OSU","BB0000"], "Oregon":["ORE","154733"], "Penn State":["PSU","041E42"],
+  "Purdue":["PUR","CEB888"], "Rutgers":["RUTG","CC0033"], "UCLA":["UCLA","2D68C4"],
+  "USC":["USC","990000"], "Washington":["WASH","4B2E83"], "Wisconsin":["WIS","C5050C"],
+  "Arizona":["ARIZ","CC0033"], "Arizona State":["ASU","8C1D40"], "Baylor":["BAY","154734"],
+  "BYU":["BYU","002E5D"], "Cincinnati":["CIN","E00122"], "Colorado":["COL","CFB87C"],
+  "Houston":["HOU","C8102E"], "Iowa State":["ISU","C8102E"], "Kansas":["KU","0051BA"],
+  "Kansas State":["KSU","512888"], "Oklahoma State":["OKST","FF7300"], "TCU":["TCU","4D1979"],
+  "Texas Tech":["TTU","CC0000"], "UCF":["UCF","BA9B37"], "Utah":["UTAH","CC0000"],
+  "West Virginia":["WVU","EAAA00"],
+  "Alabama":["ALA","9E1B32"], "Arkansas":["ARK","9D2235"], "Auburn":["AUB","0C2340"],
+  "Florida":["FLA","0021A5"], "Georgia":["UGA","BA0C2F"], "Kentucky":["UK","0033A0"],
+  "LSU":["LSU","461D7C"], "Mississippi State":["MSST","660000"], "Missouri":["MIZ","F1B82D"],
+  "Oklahoma":["OU","841617"], "Ole Miss":["MISS","14213D"], "South Carolina":["SC","73000A"],
+  "Tennessee":["TENN","FF8200"], "Texas":["TEX","BF5700"], "Texas A&M":["TAMU","500000"],
+  "Vanderbilt":["VANDY","866D4B"], "Notre Dame":["ND","0C2340"]
+};
+
+function logoImg(team, size){
+  size = size || 20;
+  const badge = TEAM_BADGE[team];
+  if(!badge) return '';
+  const [abbr, color] = badge;
+  const fontSize = Math.max(7, Math.round(size*0.34));
+  return `<span style="display:inline-flex; align-items:center; justify-content:center; width:${size}px; height:${size}px; min-width:${size}px; border-radius:50%; background:#${color}; color:#fff; font-size:${fontSize}px; font-weight:800; letter-spacing:-0.3px; vertical-align:middle; margin-right:6px; line-height:1;">${abbr}</span>`;
+}
+
+// 2026 season, Power 4 + Notre Dame matchups only (games against G5/FCS opponents omitted).
+// Week 0 = Aug 29 kickoff weekend. Weeks 1-13 follow the standard Saturday-anchored CFB week numbering.
+// Source: SEC/Big Ten/Big 12/ACC official 2026 schedule releases (Jan 2026), cross-checked across conferences.
+const SCHEDULE = {
+  0: [["NC State","Virginia"],["TCU","North Carolina"]],
+  1: [["Baylor","Auburn"],["Clemson","LSU"],["Louisville","Ole Miss"],["UCLA","California"],["Wisconsin","Notre Dame"],["Cincinnati","Boston College"],["Colorado","Georgia Tech"],["Florida State","SMU"],["Miami","Stanford"]],
+  2: [["Arkansas","Utah"],["Mississippi State","Minnesota"],["Missouri","Kansas"],["Oklahoma","Michigan"],["Tennessee","Georgia Tech"],["Ohio State","Texas"],["Arizona State","Texas A&M"],["Alabama","Kentucky"],["Illinois","Duke"],["Iowa","Iowa State"],["Purdue","Wake Forest"],["Rutgers","Boston College"],["Oregon","Oklahoma State"],["Arizona","BYU"],["UCF","Pittsburgh"],["California","Syracuse"]],
+  3: [["Florida State","Alabama"],["Georgia","Arkansas"],["Florida","Auburn"],["LSU","Ole Miss"],["Mississippi State","South Carolina"],["Kentucky","Texas A&M"],["NC State","Vanderbilt"],["Maryland","Virginia Tech"],["Michigan State","Notre Dame"],["Northwestern","Colorado"],["Rutgers","USC"],["Arizona State","Kansas"],["Houston","Texas Tech"],["West Virginia","Virginia"],["Clemson","North Carolina"],["Duke","Stanford"],["Louisville","SMU"],["Miami","Wake Forest"],["Pittsburgh","Syracuse"]],
+  4: [["South Carolina","Alabama"],["Vanderbilt","Auburn"],["Ole Miss","Florida"],["Oklahoma","Georgia"],["Texas A&M","LSU"],["Missouri","Mississippi State"],["Texas","Tennessee"],["Illinois","Ohio State"],["Indiana","Northwestern"],["Iowa","Michigan"],["Michigan State","Nebraska"],["Oregon","USC"],["Penn State","Wisconsin"],["Purdue","Notre Dame"],["UCLA","Maryland"],["Minnesota","Washington"],["Baylor","Colorado"],["Cincinnati","Kansas State"],["Iowa State","Utah"],["Oklahoma State","West Virginia"],["TCU","UCF"],["Boston College","Virginia Tech"],["California","Clemson"],["Georgia Tech","Stanford"],["Louisville","Wake Forest"]],
+  5: [["Vanderbilt","Georgia"],["Alabama","Mississippi State"],["Florida","Missouri"],["Kentucky","South Carolina"],["Auburn","Tennessee"],["Arkansas","Texas A&M"],["Illinois","Purdue"],["Indiana","Rutgers"],["Iowa","Ohio State"],["Maryland","Nebraska"],["Michigan","Minnesota"],["Michigan State","Wisconsin"],["Northwestern","Penn State"],["USC","Washington"],["Arizona","Cincinnati"],["Arizona State","Baylor"],["BYU","TCU"],["Colorado","Texas Tech"],["Houston","UCF"],["Iowa State","West Virginia"],["Boston College","SMU"],["Clemson","Miami"],["Florida State","Virginia"],["Louisville","NC State"],["North Carolina","Notre Dame"],["Pittsburgh","Virginia Tech"],["Stanford","Wake Forest"]],
+  6: [["Georgia","Alabama"],["Tennessee","Arkansas"],["South Carolina","Florida"],["LSU","Kentucky"],["Texas A&M","Missouri"],["Texas","Oklahoma"],["Ole Miss","Vanderbilt"],["Illinois","Michigan State"],["Indiana","Nebraska"],["Iowa","Washington"],["Maryland","Ohio State"],["Minnesota","Purdue"],["Oregon","UCLA"],["Penn State","USC"],["Arizona","West Virginia"],["BYU","Iowa State"],["Houston","Kansas State"],["Kansas","Utah"],["Oklahoma State","UCF"],["California","Virginia Tech"],["Duke","Georgia Tech"],["Florida State","Louisville"],["NC State","Wake Forest"],["North Carolina","Pittsburgh"],["Stanford","Notre Dame"],["Syracuse","Virginia"]],
+  7: [["Auburn","Georgia"],["Mississippi State","LSU"],["Missouri","Ole Miss"],["Kentucky","Oklahoma"],["Alabama","Tennessee"],["Florida","Texas"],["Arkansas","Vanderbilt"],["Indiana","Ohio State"],["Maryland","Rutgers"],["Michigan","Penn State"],["Michigan State","Northwestern"],["Nebraska","Oregon"],["Purdue","Washington"],["UCLA","Wisconsin"],["Arizona State","Texas Tech"],["Baylor","TCU"],["BYU","Notre Dame"],["Cincinnati","West Virginia"],["Colorado","Utah"],["Houston","Oklahoma State"],["Kansas","Kansas State"],["Boston College","Pittsburgh"],["California","Wake Forest"],["Duke","North Carolina"],["Florida State","Miami"],["Georgia Tech","Virginia Tech"],["Louisville","Syracuse"],["SMU","Virginia"]],
+  8: [["Texas A&M","Alabama"],["LSU","Auburn"],["Vanderbilt","Kentucky"],["Oklahoma","Mississippi State"],["Tennessee","South Carolina"],["Ole Miss","Texas"],["Illinois","Oregon"],["Indiana","Michigan"],["Michigan State","UCLA"],["Northwestern","Rutgers"],["USC","Wisconsin"],["Arizona","Iowa State"],["Arizona State","Kansas State"],["Baylor","Kansas"],["BYU","UCF"],["Cincinnati","Texas Tech"],["Colorado","Oklahoma State"],["Houston","Utah"],["TCU","West Virginia"],["Boston College","Georgia Tech"],["California","SMU"],["Clemson","Virginia Tech"],["Duke","Virginia"],["Miami","Pittsburgh"],["NC State","Stanford"],["North Carolina","Syracuse"]],
+  9: [["Missouri","Arkansas"],["Florida","Georgia"],["Auburn","Ole Miss"],["South Carolina","Oklahoma"],["Mississippi State","Texas"],["Illinois","Maryland"],["Indiana","Minnesota"],["Iowa","Wisconsin"],["Michigan","Rutgers"],["Nebraska","Washington"],["Northwestern","Oregon"],["Ohio State","USC"],["Penn State","Purdue"],["Arizona","Texas Tech"],["Arizona State","BYU"],["Baylor","UCF"],["Cincinnati","Utah"],["Colorado","Kansas State"],["Iowa State","Oklahoma State"],["Kansas","TCU"],["Boston College","Duke"],["California","NC State"],["Clemson","Florida State"],["Georgia Tech","Pittsburgh"],["Louisville","Stanford"],["Miami","North Carolina"],["SMU","Syracuse"],["Virginia","Wake Forest"]],
+  10: [["Arkansas","Auburn"],["Oklahoma","Florida"],["Alabama","LSU"],["Georgia","Ole Miss"],["Vanderbilt","Mississippi State"],["Texas","Missouri"],["Texas A&M","South Carolina"],["Kentucky","Tennessee"],["Illinois","Nebraska"],["Maryland","Purdue"],["Michigan","Michigan State"],["Minnesota","UCLA"],["Northwestern","Iowa"],["Ohio State","Oregon"],["Penn State","Washington"],["Rutgers","Wisconsin"],["Arizona","TCU"],["Arizona State","Colorado"],["BYU","Utah"],["Cincinnati","Houston"],["Kansas","UCF"],["Kansas State","Oklahoma State"],["Texas Tech","West Virginia"],["Boston College","Florida State"],["Clemson","Syracuse"],["Duke","NC State"],["Georgia Tech","Louisville"],["Miami","Notre Dame"],["SMU","Virginia Tech"]],
+  11: [["South Carolina","Arkansas"],["Missouri","Georgia"],["Florida","Kentucky"],["Texas","LSU"],["Auburn","Mississippi State"],["Ole Miss","Oklahoma"],["Tennessee","Texas A&M"],["Alabama","Vanderbilt"],["Illinois","UCLA"],["Indiana","USC"],["Iowa","Purdue"],["Maryland","Wisconsin"],["Michigan","Oregon"],["Michigan State","Washington"],["Nebraska","Rutgers"],["Northwestern","Ohio State"],["Minnesota","Penn State"],["Arizona","Utah"],["Arizona State","UCF"],["Baylor","BYU"],["Cincinnati","Iowa State"],["Kansas","West Virginia"],["Kansas State","TCU"],["Oklahoma State","Texas Tech"],["Boston College","Notre Dame"],["California","Virginia"],["Clemson","Georgia Tech"],["Duke","Miami"],["Florida State","Pittsburgh"],["Louisville","North Carolina"],["NC State","Syracuse"],["SMU","Wake Forest"],["Stanford","Virginia Tech"]],
+  12: [["Vanderbilt","Florida"],["Kentucky","Missouri"],["Texas A&M","Oklahoma"],["Georgia","South Carolina"],["LSU","Tennessee"],["Arkansas","Texas"],["Illinois","Iowa"],["Indiana","Washington"],["Michigan State","Oregon"],["Minnesota","Northwestern"],["Ohio State","Nebraska"],["Penn State","Rutgers"],["Purdue","Wisconsin"],["USC","Maryland"],["UCLA","Michigan"],["Arizona","Kansas State"],["Arizona State","Oklahoma State"],["BYU","Kansas"],["Cincinnati","Colorado"],["Houston","West Virginia"],["Iowa State","UCF"],["TCU","Utah"],["Boston College","Syracuse"],["California","Stanford"],["Clemson","Duke"],["Florida State","NC State"],["Georgia Tech","Wake Forest"],["Miami","Virginia Tech"],["North Carolina","Virginia"],["SMU","Notre Dame"]],
+  13: [["Texas","Texas A&M"],["Auburn","Alabama"],["LSU","Arkansas"],["Florida","Florida State"],["Georgia Tech","Georgia"],["Louisville","Kentucky"],["Mississippi State","Ole Miss"],["Oklahoma","Missouri"],["South Carolina","Clemson"],["Tennessee","Vanderbilt"],["Illinois","Northwestern"],["Indiana","Purdue"],["Iowa","Nebraska"],["Maryland","Penn State"],["Michigan","Ohio State"],["Michigan State","Rutgers"],["Minnesota","Wisconsin"],["USC","UCLA"],["Washington","Oregon"],["Arizona","Arizona State"],["Baylor","Houston"],["BYU","Cincinnati"],["Colorado","UCF"],["Iowa State","Kansas State"],["Kansas","Oklahoma State"],["TCU","Texas Tech"],["Utah","West Virginia"],["Boston College","Miami"],["California","Pittsburgh"],["Duke","Wake Forest"],["NC State","North Carolina"],["SMU","Stanford"],["Syracuse","Notre Dame"],["Virginia","Virginia Tech"]]
+};
+
+function scheduledOpponent(week, team){
+  const games = SCHEDULE[String(week)] || SCHEDULE[Number(week)];
+  if(!games) return null;
+  for(const [a,b] of games){
+    if(a === team) return b;
+    if(b === team) return a;
+  }
+  return null;
+}
+
+// Anchor date each week's games are mostly played (used as a fallback kickoff date).
+const WEEK_DATES = {
+  0:'2026-08-29', 1:'2026-09-05', 2:'2026-09-12', 3:'2026-09-19', 4:'2026-09-26',
+  5:'2026-10-03', 6:'2026-10-10', 7:'2026-10-17', 8:'2026-10-24', 9:'2026-10-31',
+  10:'2026-11-07', 11:'2026-11-14', 12:'2026-11-21', 13:'2026-11-27'
+};
+
+// Known exact kickoff date+times for confirmed games. Times include the UTC offset
+// (Eastern time, -04:00 = EDT through early Nov, -05:00 = EST after) so the lock
+// fires at the same real moment worldwide, regardless of the viewer's own timezone.
+// Games not listed here fall back to the week's default Saturday, midnight ET.
+const GAME_DATE_OVERRIDES = {
+  0: {
+    'North Carolina|TCU': '2026-08-29T12:00:00-04:00',
+    'NC State|Virginia': '2026-08-29T15:30:00-04:00'
+  },
+  1: {
+    'Colorado|Georgia Tech': '2026-09-03T20:00:00-04:00',
+    'Miami|Stanford': '2026-09-04T21:00:00-04:00',
+    'Auburn|Baylor': '2026-09-05T15:30:00-04:00',
+    'Boston College|Cincinnati': '2026-09-05T15:30:00-04:00',
+    'Clemson|LSU': '2026-09-05T19:30:00-04:00',
+    'California|UCLA': '2026-09-05T22:30:00-04:00',
+    'Notre Dame|Wisconsin': '2026-09-06T19:30:00-04:00',
+    'Louisville|Ole Miss': '2026-09-06T19:30:00-04:00',
+    'Florida State|SMU': '2026-09-07T19:30:00-04:00'
+  },
+  2: {
+    'Arizona|BYU': '2026-09-12T15:30:00-04:00',
+    'Pittsburgh|UCF': '2026-09-12T15:30:00-04:00',
+    'Kansas|Missouri': '2026-09-11T20:00:00-04:00',
+    'Michigan|Oklahoma': '2026-09-12T12:00:00-04:00',
+    'Arizona State|Texas A&M': '2026-09-12T12:00:00-04:00',
+    'Oklahoma State|Oregon': '2026-09-12T12:00:00-04:00',
+    'Minnesota|Mississippi State': '2026-09-12T15:30:00-04:00',
+    'Georgia Tech|Tennessee': '2026-09-12T19:00:00-04:00',
+    'Iowa|Iowa State': '2026-09-12T19:30:00-04:00',
+    'Ohio State|Texas': '2026-09-12T19:30:00-04:00',
+    'Arkansas|Utah': '2026-09-12T22:15:00-04:00',
+    'Duke|Illinois': '2026-09-12T15:30:00-04:00',
+    'Purdue|Wake Forest': '2026-09-12T12:00:00-04:00',
+    'Boston College|Rutgers': '2026-09-12T19:30:00-04:00',
+    'Alabama|Kentucky': '2026-09-12T15:30:00-04:00',
+    'California|Syracuse': '2026-09-12T15:30:00-04:00'
+  }
+};
+
+function kickoffDate(week, teamA, teamB){
+  const key = [teamA, teamB].sort().join('|');
+  const overrides = GAME_DATE_OVERRIDES[week];
+  if(overrides && overrides[key]) return overrides[key];
+  const offset = week <= 9 ? '-04:00' : '-05:00'; // DST ends Nov 1, 2026
+  return WEEK_DATES[week] + 'T00:00:00' + offset;
+}
+
+function toDateObj(dateStr){
+  return new Date(dateStr.includes('T') ? dateStr : dateStr + 'T00:00:00');
+}
+
+function teamsPlayingInWeek(week){
+  const games = SCHEDULE[week] || [];
+  const teams = new Set();
+  games.forEach(([a,b])=>{ teams.add(a); teams.add(b); });
+  return ALL_TEAMS.filter(t=>teams.has(t));
+}
+
+// Pick periods: period 1 bundles Week 0 + Week 1 together (opens Aug 20, since Week 0's
+// Aug 29 games and Week 1's early-Sept games both fall inside that window). Every period
+// after that is a single calendar week, opening the Monday after the prior week's games.
+const PICK_PERIODS = [
+  { id:1, weeks:[0,1], label:'Week 1', windowOpen:'2026-08-20' },
+  { id:2, weeks:[2],  label:'Week 2',  windowOpen:'2026-09-07' },
+  { id:3, weeks:[3],  label:'Week 3',  windowOpen:'2026-09-14' },
+  { id:4, weeks:[4],  label:'Week 4',  windowOpen:'2026-09-21' },
+  { id:5, weeks:[5],  label:'Week 5',  windowOpen:'2026-09-28' },
+  { id:6, weeks:[6],  label:'Week 6',  windowOpen:'2026-10-05' },
+  { id:7, weeks:[7],  label:'Week 7',  windowOpen:'2026-10-12' },
+  { id:8, weeks:[8],  label:'Week 8',  windowOpen:'2026-10-19' },
+  { id:9, weeks:[9],  label:'Week 9',  windowOpen:'2026-10-26' },
+  { id:10, weeks:[10], label:'Week 10', windowOpen:'2026-11-02' },
+  { id:11, weeks:[11], label:'Week 11', windowOpen:'2026-11-09' },
+  { id:12, weeks:[12], label:'Week 12', windowOpen:'2026-11-16' },
+  { id:13, weeks:[13], label:'Week 13', windowOpen:'2026-11-23' }
+];
+const LAST_PERIOD = PICK_PERIODS.length;
+
+// Testing Mode is only available for people to get comfortable with the app before
+// the season actually starts. It hard-disables itself once real picks are live.
+const TESTING_MODE_CUTOFF = '2026-08-20T00:00:00';
+function testingModeAllowed(){
+  return new Date() < new Date(TESTING_MODE_CUTOFF);
+}
+
+// No brand-new signups after this date — existing players can still log in fine.
+const SIGNUP_CUTOFF = '2026-09-07T00:00:00-04:00';
+function newSignupsAllowed(){
+  return new Date() < new Date(SIGNUP_CUTOFF);
+}
+
+function nextPeriodForPlayer(email, entry){
+  const picks = (state.picks[email]||{})[entry] || [];
+  if(picks.length === 0) return 1;
+  const maxPeriod = Math.max(...picks.map(p=>p.period));
+  return maxPeriod + 1;
+}
+
+// All Power 4/Notre Dame games in a period, each with its real kickoff date,
+// limited to games that haven't kicked off yet (still pickable).
+function openGamesInPeriod(period){
+  const now = new Date();
+  const games = [];
+  period.weeks.forEach(w=>{
+    (SCHEDULE[w]||[]).forEach(([a,b])=>{
+      const dateStr = kickoffDate(w, a, b);
+      const kicked = state.testMode ? false : (now >= toDateObj(dateStr));
+      if(!kicked) games.push({week:w, teamA:a, teamB:b, date:dateStr});
+    });
+  });
+  return games;
+}
+
+let state = {
+  players: [],
+  picks: {},
+  currentEmail: null,
+  currentName: null,
+  currentEntries: 1,
+  currentEntry: 1,
+  loginStep: 'form',   // 'form' -> 'chooseEntries' (new signups only) -> logged in
+  pendingName: '',
+  pendingEmail: '',
+  activeTab: 'pick',
+  testMode: false,  // when true, ignores pick-window open dates and kickoff locks — for testing only
+  justSignedUp: false,
+  winners: {},       // "week:teamA|teamB" -> winning team name
+  pctReleases: {},   // periodId -> true/false
+  odds: {},          // gameKey -> { TeamA: '+250', TeamB: '-310' } — admin-editable, updated daily
+  pickConfirmation: null
+};
+
+const ENTRY_PRICE = 10;
+const MAX_ENTRIES = 2;
+
+const ADMIN_EMAIL = 'chaselynn25@gmail.com';
+function isAdmin(email){ return email === ADMIN_EMAIL; }
+
+function gameKey(week, teamA, teamB){
+  return week + ':' + [teamA, teamB].sort().join('|');
+}
+
+// Home/away + moneyline odds for known games. Keyed by gameKey(week, teamA, teamB).
+// home/away are null for neutral-site games (neutralSite is set instead).
+// Filled in as games are confirmed — unlisted games just won't show a site/odds line yet.
+const GAME_INFO = {
+  [gameKey(0,'NC State','Virginia')]: { home:'NC State', away:'Virginia', neutralSite:null, odds:{'NC State':'+185','Virginia':'-225'} },
+  [gameKey(0,'TCU','North Carolina')]: { home:null, away:null, neutralSite:'Dublin, Ireland', odds:{'North Carolina':'+250','TCU':'-310'} },
+  [gameKey(1,'Colorado','Georgia Tech')]: { home:'Georgia Tech', away:'Colorado', neutralSite:null, odds:{'Colorado':'+235','Georgia Tech':'-290'} },
+  [gameKey(1,'Miami','Stanford')]: { home:'Stanford', away:'Miami', neutralSite:null, odds:{'Miami':'-2800','Stanford':'+1300'} },
+  [gameKey(1,'Baylor','Auburn')]: { home:null, away:null, neutralSite:'Atlanta, GA', odds:{'Baylor':'+235','Auburn':'-290'} },
+  [gameKey(1,'Boston College','Cincinnati')]: { home:'Cincinnati', away:'Boston College', neutralSite:null, odds:{'Boston College':'+220','Cincinnati':'-270'} },
+  [gameKey(1,'Clemson','LSU')]: { home:'LSU', away:'Clemson', neutralSite:null, odds:{'Clemson':'+310','LSU':'-395'} },
+  [gameKey(1,'UCLA','California')]: { home:'California', away:'UCLA', neutralSite:null, odds:{'UCLA':'-112','California':'-108'} },
+  [gameKey(1,'Notre Dame','Wisconsin')]: { home:'Wisconsin', away:'Notre Dame', neutralSite:'Green Bay, WI (Lambeau Field)', odds:{'Wisconsin':'+1000','Notre Dame':'-1800'} },
+  [gameKey(1,'Louisville','Ole Miss')]: { home:null, away:null, neutralSite:'Nashville, TN', odds:{'Louisville':'+215','Ole Miss':'-265'} },
+  [gameKey(1,'Florida State','SMU')]: { home:'Florida State', away:'SMU', neutralSite:null, odds:{'SMU':'-130','Florida State':'+110'} },
+  [gameKey(2,'Missouri','Kansas')]: { home:'Kansas', away:'Missouri', neutralSite:null, odds:null },
+  [gameKey(2,'Oklahoma','Michigan')]: { home:'Michigan', away:'Oklahoma', neutralSite:null, odds:null },
+  [gameKey(2,'Arizona State','Texas A&M')]: { home:'Texas A&M', away:'Arizona State', neutralSite:null, odds:null },
+  [gameKey(2,'Oregon','Oklahoma State')]: { home:'Oklahoma State', away:'Oregon', neutralSite:null, odds:null },
+  [gameKey(2,'UCF','Pittsburgh')]: { home:'Pittsburgh', away:'UCF', neutralSite:null, odds:null },
+  [gameKey(2,'Mississippi State','Minnesota')]: { home:'Minnesota', away:'Mississippi State', neutralSite:null, odds:null },
+  [gameKey(2,'Tennessee','Georgia Tech')]: { home:'Georgia Tech', away:'Tennessee', neutralSite:null, odds:null },
+  [gameKey(2,'Ohio State','Texas')]: { home:'Texas', away:'Ohio State', neutralSite:null, odds:null },
+  [gameKey(2,'Arkansas','Utah')]: { home:'Utah', away:'Arkansas', neutralSite:null, odds:null },
+  [gameKey(2,'Alabama','Kentucky')]: { home:'Kentucky', away:'Alabama', neutralSite:null, odds:null },
+  [gameKey(2,'Iowa','Iowa State')]: { home:'Iowa', away:'Iowa State', neutralSite:null, odds:null },
+  [gameKey(2,'Arizona','BYU')]: { home:'BYU', away:'Arizona', neutralSite:null, odds:null },
+  [gameKey(2,'California','Syracuse')]: { home:'Syracuse', away:'California', neutralSite:null, odds:null },
+  [gameKey(2,'Illinois','Duke')]: { home:'Illinois', away:'Duke', neutralSite:null, odds:null },
+  [gameKey(2,'Purdue','Wake Forest')]: { home:'Purdue', away:'Wake Forest', neutralSite:null, odds:null },
+  [gameKey(2,'Rutgers','Boston College')]: { home:'Boston College', away:'Rutgers', neutralSite:null, odds:null }
+};
+
+function getGameInfo(week, teamA, teamB){
+  return GAME_INFO[gameKey(week, teamA, teamB)] || null;
+}
+
+function normEmail(e){ return e.trim().toLowerCase(); }
+
+// ====== BACKEND CONFIG ======
+// Paste your Google Apps Script Web App URL here (ends in /exec).
+// See the setup instructions provided alongside this file.
+const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbwY6uG7828aHhzjPDpfa12vGjDK_1xqYsvVbNeBnSwvFkegxNDra3AN8xyX7ijEjkZ7nA/exec';
+// =============================
+
+async function kvGet(key){
+  const res = await fetch(`${API_BASE_URL}?action=get&key=${encodeURIComponent(key)}`);
+  const data = await res.json();
+  return (data && data.value !== undefined) ? data.value : null;
+}
+
+async function kvBatchGet(keys){
+  const res = await fetch(`${API_BASE_URL}?action=batchGet&keys=${encodeURIComponent(keys.join(','))}`);
+  const data = await res.json();
+  return (data && data.values) ? data.values : {};
+}
+
+async function kvSet(key, value){
+  await fetch(API_BASE_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'text/plain;charset=utf-8'}, // avoids a CORS preflight
+    body: JSON.stringify({ action:'set', key, value })
+  });
+}
+
+async function kvDelete(key){
+  await fetch(API_BASE_URL, {
+    method: 'POST',
+    headers: {'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({ action:'delete', key })
+  });
+}
+
+// Personal "remember this device" data — a real website can use localStorage safely.
+function loadMyProfile(){
+  try{
+    const raw = localStorage.getItem('survivor-my-profile');
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
+function saveMyProfile(name, email){
+  localStorage.setItem('survivor-my-profile', JSON.stringify({name, email}));
+}
+
+function clearMyProfile(){
+  localStorage.removeItem('survivor-my-profile');
+}
+
+async function loadPlayers(){
+  try{
+    const raw = await kvGet('players-list');
+    state.players = raw ? JSON.parse(raw) : [];
+  }catch(e){ state.players = []; }
+}
+
+async function loadPicks(email, entry){
+  try{
+    const raw = await kvGet('picks:' + email + ':' + entry);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+
+async function savePicks(email, entry, picks){
+  await kvSet('picks:' + email + ':' + entry, JSON.stringify(picks));
+}
+
+async function savePlayersList(){
+  await kvSet('players-list', JSON.stringify(state.players));
+}
+
+async function loadWinners(){
+  try{
+    const raw = await kvGet('winners');
+    state.winners = raw ? JSON.parse(raw) : {};
+  }catch(e){ state.winners = {}; }
+}
+
+async function saveWinners(){
+  await kvSet('winners', JSON.stringify(state.winners));
+}
+
+async function saveOdds(){
+  await kvSet('odds', JSON.stringify(state.odds));
+}
+
+async function loadPctReleases(){
+  try{
+    const raw = await kvGet('pct-releases');
+    state.pctReleases = raw ? JSON.parse(raw) : {};
+  }catch(e){ state.pctReleases = {}; }
+}
+
+async function savePctReleases(){
+  await kvSet('pct-releases', JSON.stringify(state.pctReleases));
+}
+
+async function logIn(name, email, entries){
+  name = name.trim();
+  email = normEmail(email);
+  if(!name || !email) return;
+  await saveMyProfile(name, email);
+  const existing = state.players.find(p=>p.email===email);
+  const isNewSignup = !existing;
+  if(isNewSignup){
+    state.players.push({name, email, entries: entries || 1});
+    await savePlayersList();
+  } else {
+    // keep the display name in sync in case they typed it differently this time
+    state.players = state.players.map(p=>p.email===email ? {...p, name} : p);
+    await savePlayersList();
+  }
+  state.currentEmail = email;
+  state.currentName = name;
+  state.currentEntries = isNewSignup ? (entries || 1) : existing.entries;
+  state.currentEntry = 1;
+  state.justSignedUp = isNewSignup;
+  if(!state.picks[email]) state.picks[email] = {};
+  for(let i=1; i<=state.currentEntries; i++){
+    if(!state.picks[email][i]) state.picks[email][i] = await loadPicks(email, i);
+  }
+  render();
+}
+
+async function logOut(){
+  clearMyProfile();
+  state.currentEmail = null;
+  state.currentName = null;
+  state.loginStep = 'form';
+  state.currentEntry = 1;
+  render();
+}
+
+function usedTeams(email, entry){
+  return ((state.picks[email]||{})[entry]||[]).map(p=>p.team);
+}
+function usedOpps(email, entry){
+  return ((state.picks[email]||{})[entry]||[]).map(p=>p.opp);
+}
+// Returns the losing pick if this entry has been eliminated (their team lost a
+// game with a recorded result), or null if they're still alive.
+function eliminationInfo(email, entry){
+  const picks = (state.picks[email]||{})[entry] || [];
+  for(const p of picks){
+    const key = gameKey(p.week, p.team, p.opp);
+    const winner = state.winners[key];
+    if(winner && winner !== p.team){
+      return { period: p.period, team: p.team, opp: p.opp, winner };
+    }
+  }
+  return null;
+}
+
+function optionsHTML(list, excluded){
+  return list.map(t => `<option value="${t}" ${excluded.includes(t) ? 'disabled' : ''}>${t}${excluded.includes(t)?' — used':''}</option>`).join('');
+}
+
+function groupedOptionsHTML(excluded){
+  let html = '<option value="">Select a team…</option>';
+  for(const conf in TEAMS){
+    html += `<optgroup label="${conf}">${optionsHTML(TEAMS[conf], excluded)}</optgroup>`;
+  }
+  return html;
+}
+
+async function render(){
+  const app = document.getElementById('app');
+  if(!state.currentEmail){
+    if(state.loginStep === 'chooseEntries'){
+      app.innerHTML = `
+        <div class="panel">
+          <div style="font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:10px;">Welcome, ${state.pendingName}!</div>
+          <div class="empty-note" style="padding:0 0 14px;">How many entries would you like this season? Each entry picks independently — $${ENTRY_PRICE} per entry, ${MAX_ENTRIES} max.</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-gold" id="entries-1" style="flex:1; min-width:140px;">1 Entry — $${ENTRY_PRICE}</button>
+            <button class="btn-gold" id="entries-2" style="flex:1; min-width:140px;">2 Entries — $${ENTRY_PRICE*2}</button>
+          </div>
+          <div class="warn" id="entries-warn" style="margin-top:10px;"></div>
+        </div>
+      `;
+      const handleEntriesClick = async (n, btn) => {
+        const warnEl = document.getElementById('entries-warn');
+        warnEl.textContent = '';
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        try{
+          await logIn(state.pendingName, state.pendingEmail, n);
+        }catch(err){
+          warnEl.textContent = 'Something went wrong saving your signup: ' + (err && err.message ? err.message : String(err));
+          btn.disabled = false;
+          btn.textContent = n===1 ? `1 Entry — $${ENTRY_PRICE}` : `2 Entries — $${ENTRY_PRICE*2}`;
+        }
+      };
+      document.getElementById('entries-1').addEventListener('click', (e)=>{ handleEntriesClick(1, e.target); });
+      document.getElementById('entries-2').addEventListener('click', (e)=>{ handleEntriesClick(2, e.target); });
+      return;
+    }
+
+    app.innerHTML = `
+      <div class="panel">
+        <div class="field">
+          <label>Your name</label>
+          <input type="text" id="login-name" placeholder="e.g. Chase">
+        </div>
+        <div class="field">
+          <label>Your email</label>
+          <input type="text" id="login-email" placeholder="e.g. chase@email.com">
+        </div>
+        <div class="warn" id="login-warn"></div>
+        <button class="btn-gold" id="enter-btn">Enter Pool</button>
+        <div class="empty-note" style="margin-top:10px;">Enter these once — this device will remember you and log you straight in next time.</div>
+      </div>
+    `;
+    document.getElementById('enter-btn').addEventListener('click', async ()=>{
+      const name = document.getElementById('login-name').value.trim();
+      const email = document.getElementById('login-email').value.trim();
+      const warnEl = document.getElementById('login-warn');
+      if(!name){ warnEl.textContent = 'Enter your name.'; return; }
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ warnEl.textContent = 'Enter a valid email.'; return; }
+      const normalized = normEmail(email);
+      const existing = state.players.find(p=>p.email===normalized);
+      if(existing){
+        await logIn(name, email);
+      } else if(!newSignupsAllowed()){
+        warnEl.textContent = "New signups closed as of September 7th. If you already signed up before then, double-check the email you're using matches exactly.";
+      } else {
+        state.pendingName = name;
+        state.pendingEmail = email;
+        state.loginStep = 'chooseEntries';
+        render();
+      }
+    });
+    return;
+  }
+
+  const email = state.currentEmail;
+  const name = state.currentName;
+  const myEntries = state.currentEntries || 1;
+  if(!state.currentEntry) state.currentEntry = 1;
+  if(!state.picks[email]) state.picks[email] = {};
+  for(let i=1; i<=myEntries; i++){
+    if(!state.picks[email][i]) state.picks[email][i] = await loadPicks(email, i);
+  }
+  const entry = state.currentEntry;
+  const picks = state.picks[email][entry].slice().sort((a,b)=>a.period-b.period);
+  const usedT = usedTeams(email, entry);
+  const usedO = usedOpps(email, entry);
+  const remaining = ALL_TEAMS.length - usedT.length;
+  const elimination = eliminationInfo(email, entry);
+
+  const testAllowed = testingModeAllowed();
+  if(!testAllowed && state.testMode) state.testMode = false; // hard cutoff safety net
+
+  const COMMISSIONER_EMAIL = 'chaselynn25@gmail.com';
+  const mailSubject = encodeURIComponent('Power 4 Survivor — New Signup');
+  const mailBody = encodeURIComponent(`${name} (${email}) just joined the Power 4 Survivor pool.`);
+  const mailtoLink = `mailto:${COMMISSIONER_EMAIL}?subject=${mailSubject}&body=${mailBody}`;
+
+  app.innerHTML = `
+    ${state.testMode ? `<div style="background:var(--red); color:#fff; text-align:center; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; font-weight:700; padding:6px; border-radius:4px; margin-bottom:12px;">Testing Mode — pick windows & kickoff locks are bypassed</div>` : ''}
+    ${elimination ? `
+      <div style="background:rgba(184,68,56,0.18); border:2px solid var(--red); border-radius:6px; padding:14px 16px; margin-bottom:14px;">
+        <div style="font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--red); font-weight:800; margin-bottom:6px;">You've Been Eliminated${myEntries>1?` — Entry ${entry}`:''}</div>
+        <div style="font-size:14px; color:var(--chalk);">${logoImg(elimination.team,18)}${elimination.team} lost to ${logoImg(elimination.winner,18)}${elimination.winner} in ${PICK_PERIODS[elimination.period-1]?PICK_PERIODS[elimination.period-1].label:'Wk '+elimination.period}. ${myEntries>1?'Your other entry may still be alive — check the switcher below.':'This entry is done for the season.'}</div>
+      </div>
+    ` : ''}
+    ${state.justSignedUp ? `
+      <div style="background:rgba(210,163,76,0.12); border:1px solid var(--gold-dim); border-radius:6px; padding:12px 14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <span style="font-size:13px;">Welcome, ${name}! Let the commissioner know you've joined.</span>
+        <a href="${mailtoLink}" id="notify-commish-link" style="text-decoration:none;">
+          <button class="btn-gold" type="button">Notify Commissioner</button>
+        </a>
+      </div>
+    ` : ''}
+    <div class="player-bar">
+      <span style="font-size:13px;">Logged in as <b style="color:var(--gold);">${name}</b></span>
+      <button class="btn-ghost" id="logout-btn">Log Out</button>
+      ${testAllowed ? `<button class="btn-ghost" id="testmode-btn">${state.testMode ? 'Exit Testing Mode' : 'Enable Testing Mode'}</button>` : ''}
+      <span style="margin-left:auto; font-size:12px; color:rgba(243,240,230,0.6);">
+        ${remaining} teams remaining
+      </span>
+    </div>
+
+    ${myEntries > 1 ? `
+      <div class="player-bar" style="margin-top:-10px;">
+        <span style="font-size:12px; color:rgba(243,240,230,0.6);">Viewing:</span>
+        ${[1,2].map(n=>{
+          const elimN = eliminationInfo(email, n);
+          return `<button class="btn-ghost entry-switch-btn" data-entry="${n}" style="${entry===n?'border-color:var(--gold); color:var(--gold);':''} ${elimN?'color:var(--red);':''}">Entry ${n}${elimN?' (Out)':''}</button>`;
+        }).join('')}
+      </div>
+    ` : ''}
+
+    <div class="tabs">
+      <div class="tab ${state.activeTab==='pick'?'active':''}" data-tab="pick">Make Pick</div>
+      <div class="tab ${state.activeTab==='board'?'active':''}" data-tab="board">My Picks</div>
+      <div class="tab ${state.activeTab==='schedule'?'active':''}" data-tab="schedule">Schedule</div>
+      <div class="tab ${state.activeTab==='teams'?'active':''}" data-tab="teams">Team Grid</div>
+      <div class="tab ${state.activeTab==='pool'?'active':''}" data-tab="pool">Whole Pool</div>
+      ${isAdmin(email) ? `<div class="tab ${state.activeTab==='admin'?'active':''}" data-tab="admin" style="color:var(--red);">Admin</div>` : ''}
+    </div>
+
+    <div class="panel" id="tab-content"></div>
+  `;
+
+  if(state.justSignedUp){
+    const notifyLink = document.getElementById('notify-commish-link');
+    if(notifyLink) notifyLink.addEventListener('click', ()=>{ state.justSignedUp = false; });
+  }
+  document.getElementById('logout-btn').addEventListener('click', async ()=>{
+    await logOut();
+  });
+  const testBtn = document.getElementById('testmode-btn');
+  if(testBtn){
+    testBtn.addEventListener('click', ()=>{
+      state.testMode = !state.testMode;
+      render();
+    });
+  }
+  document.querySelectorAll('.entry-switch-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      state.currentEntry = Number(btn.dataset.entry);
+      render();
+    });
+  });
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      state.activeTab = t.dataset.tab;
+      render();
+    });
+  });
+
+  const content = document.getElementById('tab-content');
+
+  if(state.activeTab === 'pool' || state.activeTab === 'admin'){
+    const neededKeys = [];
+    state.players.forEach(pl=>{
+      const n = pl.entries || 1;
+      for(let i=1; i<=n; i++){
+        if(!state.picks[pl.email] || !state.picks[pl.email][i]) neededKeys.push('picks:' + pl.email + ':' + i);
+      }
+    });
+    if(neededKeys.length > 0){
+      const batch = await kvBatchGet(neededKeys);
+      neededKeys.forEach(k=>{
+        const parts = k.split(':'); // ['picks', email, entry]
+        const em = parts[1], entryNum = parts[2];
+        if(!state.picks[em]) state.picks[em] = {};
+        state.picks[em][entryNum] = batch[k] ? JSON.parse(batch[k]) : [];
+      });
+    }
+  }
+
+  if(state.activeTab === 'pick'){
+    if(elimination){
+      content.innerHTML = `<div class="empty-note">This entry is eliminated — no more picks can be made on it. ${myEntries>1?'Switch entries above if your other one is still alive.':''}</div>`;
+    } else {
+    const periodId = nextPeriodForPlayer(email, entry);
+    const now = new Date();
+
+    if(periodId > LAST_PERIOD){
+      content.innerHTML = `<div class="empty-note">Season's over — you made it through all ${LAST_PERIOD} weeks (or ran out of teams). Check "My Board" for your full run.</div>`;
+    } else {
+      const period = PICK_PERIODS[periodId - 1];
+      const windowOpen = new Date(period.windowOpen + 'T00:00:00');
+      if(!state.testMode && now < windowOpen){
+        const opensOn = windowOpen.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
+        content.innerHTML = `<div class="empty-note">${period.label} picks open ${opensOn}. Come back then.</div>`;
+      } else {
+        const openGames = openGamesInPeriod(period);
+        // one entry per team still available to pick (game hasn't kicked off, team/opponent not already used)
+        const eligible = [];
+        openGames.forEach(g=>{
+          const liveOdds = state.odds[gameKey(g.week, g.teamA, g.teamB)] || null;
+          [[g.teamA,g.teamB],[g.teamB,g.teamA]].forEach(([team,opp])=>{
+            if(!ALL_TEAMS.includes(team)) return;
+            if(usedT.includes(team)) return;
+            if(usedO.includes(opp)) return;
+            eligible.push({team, opp, week:g.week, date:g.date, odds: liveOdds && liveOdds[team] ? liveOdds[team] : null});
+          });
+        });
+        eligible.sort((a,b)=>a.team.localeCompare(b.team));
+
+        content.innerHTML = `
+          <div style="font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:4px;">${period.label}</div>
+          <div class="empty-note" style="padding:0 0 12px;">Picks lock individually the moment each team kicks off — you can change your mind right up until then. Odds lock in at the moment you submit your pick, even if they move later.</div>
+          <div class="field">
+            <label>My Team (the winner you're taking)</label>
+            <select id="team-select">
+              <option value="">Select a team…</option>
+              ${eligible.map(g=>`<option value="${g.team}">${g.team} — vs. ${g.opp} (${toDateObj(g.date).toLocaleDateString(undefined,{month:'short',day:'numeric'})}, ${toDateObj(g.date).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})})${g.odds ? ' — ' + g.odds : ''}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field" id="opp-display-field" style="display:none;">
+            <label>Opponent (auto-filled from the 2026 schedule)</label>
+            <div style="padding:10px 12px; border:1px solid var(--line); border-radius:4px; background:rgba(255,255,255,0.03);" id="opp-display"></div>
+          </div>
+          <div class="warn" id="warn-text"></div>
+          <button class="btn-gold" id="submit-pick" disabled>Lock In Pick</button>
+        `;
+        if(eligible.length === 0){
+          content.insertAdjacentHTML('beforeend', `<div class="empty-note" style="margin-top:10px;">No eligible games left in ${period.label} — every matchup has either kicked off already or uses a team/opponent you've already used.</div>`);
+        }
+
+        let lockedOpp = null, lockedWeek = null, lockedDate = null, lockedOdds = null;
+        document.getElementById('team-select').addEventListener('change', (e)=>{
+          const team = e.target.value;
+          const oppField = document.getElementById('opp-display-field');
+          const oppDisplay = document.getElementById('opp-display');
+          const btn = document.getElementById('submit-pick');
+          const warnEl = document.getElementById('warn-text');
+          warnEl.textContent = '';
+          const match = eligible.find(g=>g.team===team);
+          if(!match){ oppField.style.display='none'; btn.disabled = true; lockedOpp = null; return; }
+          lockedOpp = match.opp; lockedWeek = match.week; lockedDate = match.date; lockedOdds = match.odds;
+          oppField.style.display='block';
+          const oddsLine = lockedOdds ? ` — your odds: <b style="color:var(--gold);">${lockedOdds}</b> (locked in now)` : ' — no odds entered yet for this game';
+          oppDisplay.innerHTML = `${logoImg(lockedOpp,22)}${lockedOpp} — kicks off ${toDateObj(lockedDate).toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'})} at ${toDateObj(lockedDate).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}${oddsLine}`;
+          btn.disabled = false;
+        });
+
+        document.getElementById('submit-pick').addEventListener('click', async ()=>{
+          const team = document.getElementById('team-select').value;
+          const warnEl = document.getElementById('warn-text');
+          const btn = document.getElementById('submit-pick');
+          if(!team || !lockedOpp){ warnEl.textContent = 'Select a team first.'; return; }
+          if(usedT.includes(team)){ warnEl.textContent = `You've already picked ${team} to win this season.`; return; }
+          if(usedO.includes(lockedOpp)){ warnEl.textContent = `You've already picked against ${lockedOpp} this season.`; return; }
+          if(!state.testMode && new Date() >= toDateObj(lockedDate)){ warnEl.textContent = `${team}'s game already kicked off — pick a different team.`; return; }
+          if(state.picks[email][entry].some(p=>p.period===periodId)){ warnEl.textContent = `You've already made your pick for ${period.label}.`; return; }
+          btn.disabled = true;
+          state.picks[email][entry].push({period: periodId, week: lockedWeek, team, opp: lockedOpp, kickoff: lockedDate, odds: lockedOdds, submittedAt: new Date().toISOString()});
+          await savePicks(email, entry, state.picks[email][entry]);
+          state.pickConfirmation = { team, opp: lockedOpp, weekLabel: period.label, odds: lockedOdds };
+          render();
+        });
+      }
+    }
+    }
+  }
+
+  if(state.activeTab === 'board'){
+    const entryHeader = myEntries > 1 ? `<div style="font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:10px;">Entry ${entry}</div>` : '';
+    if(picks.length === 0){
+      content.innerHTML = entryHeader + `<div class="empty-note">No picks logged yet — head to "Make Pick" to get started.</div>`;
+    } else {
+      const now = new Date();
+      content.innerHTML = entryHeader + picks.map(p => {
+        const kicked = state.testMode ? false : (p.kickoff ? now >= toDateObj(p.kickoff) : true);
+        return `
+        <div class="pick-row">
+          <div class="wk">${PICK_PERIODS[p.period-1] ? PICK_PERIODS[p.period-1].label : 'Wk '+p.week}</div>
+          <div class="matchup">${logoImg(p.team,20)}<b style="color:var(--gold);">${p.team}</b> <span class="vs">over</span> ${logoImg(p.opp,20)}${p.opp}${p.odds ? ` <span style="color:rgba(243,240,230,0.5); font-size:12px;">(${p.odds})</span>` : ''}</div>
+          ${!kicked ? `<button class="btn-danger" data-period="${p.period}">Remove</button>` : `<span style="font-size:11px; color:rgba(243,240,230,0.4);">locked — kicked off</span>`}
+        </div>
+      `;}).join('');
+      content.querySelectorAll('.btn-danger').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const per = btn.dataset.period;
+          state.picks[email][entry] = state.picks[email][entry].filter(p=>String(p.period)!==per);
+          await savePicks(email, entry, state.picks[email][entry]);
+          render();
+        });
+      });
+    }
+  }
+
+  if(state.activeTab === 'schedule'){
+    if(!state.scheduleWeek) state.scheduleWeek = 1;
+    const period = PICK_PERIODS[state.scheduleWeek - 1];
+    const games = [];
+    period.weeks.forEach(w=>{
+      (SCHEDULE[w]||[]).forEach(([a,b])=>{
+        games.push({a, b, week: w, date: kickoffDate(w, a, b), info: getGameInfo(w, a, b)});
+      });
+    });
+    games.sort((x,y)=> toDateObj(x.date) - toDateObj(y.date));
+    let html = `
+      <div class="field" style="max-width:220px;">
+        <label>Select Week</label>
+        <select id="schedule-week-select">
+          ${PICK_PERIODS.map(p=>`<option value="${p.id}" ${p.id===state.scheduleWeek?'selected':''}>${p.label}</option>`).join('')}
+        </select>
+      </div>
+    `;
+    html += games.map(g => {
+      const info = g.info;
+      const week = g.week !== undefined ? g.week : null;
+      const away = info && info.home ? (info.home===g.a ? g.b : g.a) : g.a;
+      const home = info && info.home ? info.home : g.b;
+      const winner = state.winners[gameKey(g.week, g.a, g.b)];
+      const siteLine = info && info.neutralSite
+        ? `Neutral site — ${info.neutralSite}`
+        : (info && info.home ? `${away} @ ${home}` : `${g.a} vs. ${g.b} — site TBD`);
+
+      if(winner){
+        const loser = winner === away ? home : away;
+        return `
+        <div class="pick-row" style="flex-direction:column; align-items:stretch; gap:6px; background:rgba(210,163,76,0.06);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div class="matchup">${logoImg(winner,22)}<b style="color:var(--gold);">${winner}</b> <span class="vs">defeated</span> ${logoImg(loser,22)}${loser}</div>
+            <span style="font-size:11px; color:var(--gold); text-transform:uppercase; letter-spacing:1px; font-weight:700;">Final</span>
+          </div>
+          <div style="font-size:11px; color:rgba(243,240,230,0.45);">${siteLine}</div>
+        </div>
+      `;
+      }
+
+      const liveOdds = state.odds[gameKey(g.week, g.a, g.b)];
+      const oddsMap = liveOdds || (info && info.odds) || null;
+      const oddsFor = t => oddsMap && oddsMap[t] ? ` <span style="color:rgba(243,240,230,0.55); font-size:11px;">(${oddsMap[t]})</span>` : '';
+      return `
+      <div class="pick-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div class="matchup">${logoImg(away,22)}${away}${oddsFor(away)} <span class="vs">@</span> ${logoImg(home,22)}${home}${oddsFor(home)}</div>
+          <div style="font-size:12px; color:rgba(243,240,230,0.6); white-space:nowrap;">
+            ${toDateObj(g.date).toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'})}, ${toDateObj(g.date).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}
+          </div>
+        </div>
+        <div style="font-size:11px; color:rgba(243,240,230,0.45);">${siteLine}</div>
+      </div>
+    `;}).join('');
+    content.innerHTML = html;
+    document.getElementById('schedule-week-select').addEventListener('change', (e)=>{
+      state.scheduleWeek = Number(e.target.value);
+      render();
+    });
+  }
+
+  if(state.activeTab === 'teams'){
+    let html = `
+      <div class="legend">
+        <span><span class="dot" style="background:rgba(184,68,56,0.5)"></span> already picked to win</span>
+        <span><span class="dot" style="background:var(--gold-dim)"></span> already picked against</span>
+      </div>
+    `;
+    for(const conf in TEAMS){
+      html += `<div class="conf-block"><div class="conf-title">${conf}</div><div class="chip-grid">`;
+      html += TEAMS[conf].map(t=>{
+        let cls = 'chip';
+        if(usedT.includes(t)) cls += ' used-team';
+        else if(usedO.includes(t)) cls += ' used-opp';
+        return `<span class="${cls}">${logoImg(t,16)}${t}</span>`;
+      }).join('');
+      html += `</div></div>`;
+    }
+    content.innerHTML = html;
+  }
+
+  if(state.activeTab === 'pool'){
+    if(state.players.length === 0){
+      content.innerHTML = `<div class="empty-note">No one's joined the pool yet.</div>`;
+    } else {
+      const now = new Date();
+      let html = `<div class="empty-note" style="padding:0 0 14px;">Picks stay hidden until each game kicks off. Once a game's final result is entered, correct picks show green and wrong picks show red.</div>`;
+      let anySection = false;
+
+      for(const period of PICK_PERIODS){
+        // gather every player's (every entry's) pick for this period
+        const periodPicks = [];
+        state.players.forEach(pl=>{
+          const n = pl.entries || 1;
+          for(let i=1; i<=n; i++){
+            const pk = ((state.picks[pl.email]||{})[i]||[]).find(p=>p.period===period.id);
+            if(pk) periodPicks.push({...pk, playerName: pl.name, entryLabel: n>1 ? `${pl.name} (Entry ${i})` : pl.name});
+          }
+        });
+        const pctOn = !!state.pctReleases[period.id];
+        const revealable = periodPicks.filter(p => state.testMode || (p.kickoff && now >= toDateObj(p.kickoff)));
+        if(periodPicks.length === 0 && !pctOn) continue; // nothing happening in this period yet
+        if(revealable.length === 0 && !pctOn) continue;  // nothing visible yet, don't show an empty section
+
+        anySection = true;
+        html += `<div style="font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin:18px 0 8px;">${period.label}</div>`;
+
+        if(pctOn && periodPicks.length > 0){
+          const counts = {};
+          periodPicks.forEach(p=>{ counts[p.team] = (counts[p.team]||0) + 1; });
+          const total = periodPicks.length;
+          const rows = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+          html += `<div style="margin-bottom:14px;">`;
+          rows.forEach(([team,count])=>{
+            const pct = Math.round((count/total)*100);
+            html += `
+              <div class="pct-bar-wrap">
+                <div class="pct-bar-label"><span>${logoImg(team,16)}${team}</span><span>${pct}% (${count})</span></div>
+                <div class="pct-bar-track"><div class="pct-bar-fill" style="width:${pct}%;"></div></div>
+              </div>
+            `;
+          });
+          html += `</div>`;
+        }
+
+        revealable.forEach(p=>{
+          const key = gameKey(p.week, p.team, p.opp);
+          const winner = state.winners[key];
+          let cls = '';
+          if(winner){ cls = (winner === p.team) ? 'correct' : 'wrong'; }
+          html += `
+            <div class="pick-row reveal-row ${cls}">
+              <div class="matchup">
+                <b>${p.entryLabel}</b>: ${logoImg(p.team,18)}${p.team} <span class="vs">over</span> ${logoImg(p.opp,18)}${p.opp}${p.odds ? ` <span style="color:rgba(243,240,230,0.5); font-size:12px;">(${p.odds})</span>` : ''}
+              </div>
+              <div style="font-size:11px; color:rgba(243,240,230,0.6); text-transform:uppercase; letter-spacing:1px;">
+                ${winner ? (winner===p.team ? 'Correct' : 'Incorrect') : 'Result pending'}
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      if(!anySection){
+        html += `<div class="empty-note">Nothing to show yet — picks reveal here once games kick off, or when a percentage breakdown is released.</div>`;
+      }
+      content.innerHTML = html;
+    }
+  }
+
+  if(state.activeTab === 'admin' && isAdmin(email)){
+    if(!state.adminSubTab) state.adminSubTab = 'results';
+    let html = `
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <button class="btn-ghost" id="admin-tab-results" style="${state.adminSubTab==='results'?'border-color:var(--gold); color:var(--gold);':''}">Enter Results</button>
+        <button class="btn-ghost" id="admin-tab-odds" style="${state.adminSubTab==='odds'?'border-color:var(--gold); color:var(--gold);':''}">Update Odds</button>
+        <button class="btn-ghost" id="admin-tab-pct" style="${state.adminSubTab==='pct'?'border-color:var(--gold); color:var(--gold);':''}">Percentage Reveal</button>
+        <button class="btn-ghost" id="admin-tab-all" style="${state.adminSubTab==='all'?'border-color:var(--gold); color:var(--gold);':''}">All Picks</button>
+      </div>
+    `;
+
+    if(state.adminSubTab === 'results'){
+      if(!state.adminResultsWeek) state.adminResultsWeek = 1;
+      const period = PICK_PERIODS[state.adminResultsWeek - 1];
+      const games = [];
+      period.weeks.forEach(w=>{
+        (SCHEDULE[w]||[]).forEach(([a,b])=>{ games.push({week:w, a, b, date:kickoffDate(w,a,b)}); });
+      });
+      games.sort((x,y)=> toDateObj(x.date) - toDateObj(y.date));
+      html += `
+        <div class="field" style="max-width:220px;">
+          <label>Select Week</label>
+          <select id="admin-week-select">
+            ${PICK_PERIODS.map(p=>`<option value="${p.id}" ${p.id===state.adminResultsWeek?'selected':''}>${p.label}</option>`).join('')}
+          </select>
+        </div>
+      `;
+      games.forEach(g=>{
+        const key = gameKey(g.week, g.a, g.b);
+        const winner = state.winners[key];
+        html += `
+          <div class="pick-row">
+            <div class="matchup" style="display:flex; align-items:center; gap:10px;">
+              <button class="btn-ghost admin-winner-btn" data-key="${key}" data-team="${g.a}" style="${winner===g.a?'border-color:var(--gold); color:var(--gold);':''}">${logoImg(g.a,16)}${g.a}</button>
+              <span class="vs">beat</span>
+              <button class="btn-ghost admin-winner-btn" data-key="${key}" data-team="${g.b}" style="${winner===g.b?'border-color:var(--gold); color:var(--gold);':''}">${logoImg(g.b,16)}${g.b}</button>
+            </div>
+            ${winner ? `<button class="btn-danger admin-clear-btn" data-key="${key}">Clear</button>` : `<span style="font-size:11px; color:rgba(243,240,230,0.4);">no result yet</span>`}
+          </div>
+        `;
+      });
+    }
+
+    if(state.adminSubTab === 'odds'){
+      if(!state.adminOddsWeek) state.adminOddsWeek = 1;
+      const period = PICK_PERIODS[state.adminOddsWeek - 1];
+      const games = [];
+      period.weeks.forEach(w=>{
+        (SCHEDULE[w]||[]).forEach(([a,b])=>{ games.push({week:w, a, b, date:kickoffDate(w,a,b)}); });
+      });
+      games.sort((x,y)=> toDateObj(x.date) - toDateObj(y.date));
+      html += `
+        <div class="field" style="max-width:220px;">
+          <label>Select Week</label>
+          <select id="admin-odds-week-select">
+            ${PICK_PERIODS.map(p=>`<option value="${p.id}" ${p.id===state.adminOddsWeek?'selected':''}>${p.label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="empty-note" style="padding:0 0 12px;">Enter moneyline odds each morning (e.g. -310 or +250). Saves per game — no need to touch code or GitHub.</div>
+        <button class="btn-ghost" id="admin-backfill-odds" style="margin-bottom:16px;">Backfill missing odds on existing picks (uses today's odds)</button>
+        <div id="backfill-status" style="font-size:12px; color:var(--gold); margin-bottom:16px;"></div>
+
+        <div class="empty-note" style="padding:0 0 8px;">Correct a specific team's odds for picks already made (use this when the actual line at pick-time differs from today's — this overwrites, even if a pick already has odds set).</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+          <input type="text" id="correct-team" placeholder="Team name (e.g. Miami)" style="flex:1; min-width:160px;">
+          <input type="text" id="correct-odds" placeholder="Odds (e.g. -2800)" style="width:110px;">
+          <button class="btn-gold" id="admin-correct-odds">Apply to All Their Picks</button>
+        </div>
+        <div id="correct-status" style="font-size:12px; color:var(--gold); margin-bottom:12px;"></div>
+      `;
+      games.forEach(g=>{
+        const key = gameKey(g.week, g.a, g.b);
+        const winner = state.winners[key];
+        if(winner){
+          const loser = winner === g.a ? g.b : g.a;
+          html += `
+            <div class="pick-row" style="align-items:center;">
+              <div class="matchup">${logoImg(winner,16)}<b style="color:var(--gold);">${winner}</b> <span class="vs">defeated</span> ${logoImg(loser,16)}${loser}</div>
+              <span style="font-size:11px; color:rgba(243,240,230,0.4); text-transform:uppercase; letter-spacing:1px;">Final — odds locked</span>
+            </div>
+          `;
+          return;
+        }
+        const existing = state.odds[key] || {};
+        html += `
+          <div class="pick-row" style="align-items:center;">
+            <div class="matchup" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              ${logoImg(g.a,16)}<span style="width:110px; display:inline-block;">${g.a}</span>
+              <input type="text" class="admin-odds-input" data-key="${key}" data-team="${g.a}" value="${existing[g.a]||''}" placeholder="-310" style="width:80px;">
+              <span style="color:rgba(243,240,230,0.4);">/</span>
+              ${logoImg(g.b,16)}<span style="width:110px; display:inline-block;">${g.b}</span>
+              <input type="text" class="admin-odds-input" data-key="${key}" data-team="${g.b}" value="${existing[g.b]||''}" placeholder="+250" style="width:80px;">
+            </div>
+            <button class="btn-gold admin-odds-save" data-key="${key}" data-a="${g.a}" data-b="${g.b}" style="padding:8px 14px;">Save</button>
+          </div>
+        `;
+      });
+    }
+
+    if(state.adminSubTab === 'pct'){
+      html += `<div class="empty-note" style="padding:0 0 12px;">Release an anonymous percentage breakdown of who picked what for a given week — no names shown, just team totals.</div>`;
+      PICK_PERIODS.forEach(period=>{
+        const on = !!state.pctReleases[period.id];
+        html += `
+          <div class="pick-row">
+            <div class="matchup">${period.label}</div>
+            <button class="btn-ghost admin-pct-toggle" data-period="${period.id}" style="${on?'border-color:var(--gold); color:var(--gold);':''}">${on?'Release: ON':'Release: OFF'}</button>
+          </div>
+        `;
+      });
+    }
+
+    if(state.adminSubTab === 'all'){
+      html += `
+        <div class="empty-note" style="padding:0 0 8px;">If someone's picks exist in the sheet but aren't showing here (data got orphaned from the players list, e.g. during a storage outage), re-attach them without touching their existing picks — this won't overwrite or duplicate anything.</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+          <input type="text" id="repair-name" placeholder="Name" style="flex:1; min-width:120px;">
+          <input type="text" id="repair-email" placeholder="Email" style="flex:1; min-width:160px;">
+          <select id="repair-entries" style="width:110px;">
+            <option value="1">1 Entry</option>
+            <option value="2">2 Entries</option>
+          </select>
+          <button class="btn-gold" id="admin-repair-player">Re-attach Player</button>
+        </div>
+        <div id="repair-status" style="font-size:12px; color:var(--gold); margin-bottom:16px;"></div>
+      `;
+      if(state.players.length === 0){
+        html += `<div class="empty-note">No one's joined yet.</div>`;
+      } else {
+        for(const pl of state.players){
+          const n = pl.entries || 1;
+          html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; margin:14px 0 6px;">
+              <span style="font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold);">${pl.name} <span style="color:rgba(243,240,230,0.4); text-transform:none; letter-spacing:0;">— ${n} entr${n>1?'ies':'y'}, $${ENTRY_PRICE*n}</span></span>
+              <button class="btn-danger admin-remove-player" data-email="${pl.email}" data-name="${pl.name}" data-entries="${n}">Remove Player</button>
+            </div>
+          `;
+          for(let i=1; i<=n; i++){
+            const pPicks = ((state.picks[pl.email]||{})[i]||[]).slice().sort((a,b)=>a.period-b.period);
+            if(n>1) html += `<div style="font-size:11px; color:rgba(243,240,230,0.5); margin-bottom:4px;">Entry ${i}</div>`;
+            if(pPicks.length === 0){
+              html += `<div class="empty-note" style="padding:0 0 6px;">No picks yet.</div>`;
+            } else {
+              pPicks.forEach(p=>{
+                const key = gameKey(p.week, p.team, p.opp);
+                const winner = state.winners[key];
+                let cls = winner ? (winner===p.team?'correct':'wrong') : '';
+                const stamp = p.submittedAt ? new Date(p.submittedAt).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'no timestamp (pre-dates tracking)';
+                html += `
+                  <div class="pick-row reveal-row ${cls}" style="flex-direction:column; align-items:stretch; gap:4px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                      <div class="wk">${PICK_PERIODS[p.period-1]?PICK_PERIODS[p.period-1].label:'Wk '+p.week}</div>
+                      <div class="matchup">${logoImg(p.team,18)}<b>${p.team}</b> <span class="vs">over</span> ${logoImg(p.opp,18)}${p.opp}${p.odds ? ` <span style="color:rgba(243,240,230,0.5); font-size:12px;">(${p.odds})</span>` : ''}</div>
+                    </div>
+                    <div style="font-size:11px; color:rgba(243,240,230,0.4);">Submitted: ${stamp}</div>
+                  </div>
+                `;
+              });
+            }
+          }
+        }
+      }
+    }
+
+    content.innerHTML = html;
+
+    if(state.adminSubTab === 'results'){
+      document.getElementById('admin-week-select').addEventListener('change', (e)=>{
+        state.adminResultsWeek = Number(e.target.value);
+        render();
+      });
+      content.querySelectorAll('.admin-winner-btn').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          state.winners[btn.dataset.key] = btn.dataset.team;
+          await saveWinners();
+          render();
+        });
+      });
+      content.querySelectorAll('.admin-clear-btn').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          delete state.winners[btn.dataset.key];
+          await saveWinners();
+          render();
+        });
+      });
+    }
+    if(state.adminSubTab === 'odds'){
+      document.getElementById('admin-odds-week-select').addEventListener('change', (e)=>{
+        state.adminOddsWeek = Number(e.target.value);
+        render();
+      });
+      document.getElementById('admin-backfill-odds').addEventListener('click', async ()=>{
+        const btn = document.getElementById('admin-backfill-odds');
+        const statusEl = document.getElementById('backfill-status');
+        btn.disabled = true;
+        btn.textContent = 'Backfilling…';
+        // make sure we have every player's picks loaded
+        const neededKeys = [];
+        state.players.forEach(pl=>{
+          const n = pl.entries || 1;
+          for(let i=1; i<=n; i++){
+            if(!state.picks[pl.email] || !state.picks[pl.email][i]) neededKeys.push('picks:' + pl.email + ':' + i);
+          }
+        });
+        if(neededKeys.length > 0){
+          const batch = await kvBatchGet(neededKeys);
+          neededKeys.forEach(k=>{
+            const parts = k.split(':');
+            const em = parts[1], entryNum = parts[2];
+            if(!state.picks[em]) state.picks[em] = {};
+            state.picks[em][entryNum] = batch[k] ? JSON.parse(batch[k]) : [];
+          });
+        }
+        let filled = 0, skipped = 0;
+        for(const pl of state.players){
+          const n = pl.entries || 1;
+          for(let i=1; i<=n; i++){
+            const arr = state.picks[pl.email][i] || [];
+            let changed = false;
+            arr.forEach(p=>{
+              if(!p.odds){
+                const key = gameKey(p.week, p.team, p.opp);
+                const liveOdds = state.odds[key];
+                if(liveOdds && liveOdds[p.team]){
+                  p.odds = liveOdds[p.team];
+                  filled++;
+                  changed = true;
+                } else {
+                  skipped++;
+                }
+              }
+            });
+            if(changed) await savePicks(pl.email, i, arr);
+          }
+        }
+        statusEl.textContent = `Filled in ${filled} pick(s). ${skipped} still have no odds entered for that game yet.`;
+        btn.disabled = false;
+        btn.textContent = "Backfill missing odds on existing picks (uses today's odds)";
+      });
+      document.getElementById('admin-correct-odds').addEventListener('click', async ()=>{
+        const teamInput = document.getElementById('correct-team').value.trim();
+        const oddsInput = document.getElementById('correct-odds').value.trim();
+        const statusEl = document.getElementById('correct-status');
+        if(!teamInput || !oddsInput){ statusEl.textContent = 'Enter both a team name and odds value.'; return; }
+        const btn = document.getElementById('admin-correct-odds');
+        btn.disabled = true;
+        btn.textContent = 'Applying…';
+        const neededKeys = [];
+        state.players.forEach(pl=>{
+          const n = pl.entries || 1;
+          for(let i=1; i<=n; i++){
+            if(!state.picks[pl.email] || !state.picks[pl.email][i]) neededKeys.push('picks:' + pl.email + ':' + i);
+          }
+        });
+        if(neededKeys.length > 0){
+          const batch = await kvBatchGet(neededKeys);
+          neededKeys.forEach(k=>{
+            const parts = k.split(':');
+            const em = parts[1], entryNum = parts[2];
+            if(!state.picks[em]) state.picks[em] = {};
+            state.picks[em][entryNum] = batch[k] ? JSON.parse(batch[k]) : [];
+          });
+        }
+        let corrected = 0;
+        for(const pl of state.players){
+          const n = pl.entries || 1;
+          for(let i=1; i<=n; i++){
+            const arr = state.picks[pl.email][i] || [];
+            let changed = false;
+            arr.forEach(p=>{
+              if(p.team === teamInput){
+                p.odds = oddsInput;
+                corrected++;
+                changed = true;
+              }
+            });
+            if(changed) await savePicks(pl.email, i, arr);
+          }
+        }
+        statusEl.textContent = `Corrected ${corrected} pick(s) where the team was "${teamInput}" to ${oddsInput}.`;
+        btn.disabled = false;
+        btn.textContent = 'Apply to All Their Picks';
+      });
+      content.querySelectorAll('.admin-odds-save').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const key = btn.dataset.key, teamA = btn.dataset.a, teamB = btn.dataset.b;
+          const inputA = content.querySelector(`.admin-odds-input[data-key="${key}"][data-team="${CSS.escape(teamA)}"]`);
+          const inputB = content.querySelector(`.admin-odds-input[data-key="${key}"][data-team="${CSS.escape(teamB)}"]`);
+          state.odds[key] = { [teamA]: inputA.value.trim(), [teamB]: inputB.value.trim() };
+          btn.textContent = 'Saving…';
+          btn.disabled = true;
+          await saveOdds();
+          btn.textContent = 'Saved ✓';
+          setTimeout(()=>{ btn.textContent = 'Save'; btn.disabled = false; }, 1200);
+        });
+      });
+    }
+    if(state.adminSubTab === 'pct'){
+      content.querySelectorAll('.admin-pct-toggle').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const per = Number(btn.dataset.period);
+          state.pctReleases[per] = !state.pctReleases[per];
+          await savePctReleases();
+          render();
+        });
+      });
+    }
+    if(state.adminSubTab === 'all'){
+      document.getElementById('admin-repair-player').addEventListener('click', async ()=>{
+        const name = document.getElementById('repair-name').value.trim();
+        const email = normEmail(document.getElementById('repair-email').value.trim());
+        const entries = Number(document.getElementById('repair-entries').value);
+        const statusEl = document.getElementById('repair-status');
+        const btn = document.getElementById('admin-repair-player');
+        if(!name || !email){ statusEl.textContent = 'Enter both a name and email.'; return; }
+        btn.disabled = true;
+        btn.textContent = 'Re-attaching…';
+        if(state.players.some(p=>p.email===email)){
+          statusEl.textContent = `${name} is already on the roster — no change made.`;
+          btn.disabled = false;
+          btn.textContent = 'Re-attach Player';
+          return;
+        }
+        state.players.push({name, email, entries});
+        await savePlayersList();
+        // pull whatever picks already exist for them, rather than assuming empty
+        const keys = [];
+        for(let i=1; i<=entries; i++) keys.push('picks:' + email + ':' + i);
+        const batch = await kvBatchGet(keys);
+        state.picks[email] = {};
+        let foundPicks = 0;
+        keys.forEach((k,idx)=>{
+          const arr = batch[k] ? JSON.parse(batch[k]) : [];
+          state.picks[email][idx+1] = arr;
+          foundPicks += arr.length;
+        });
+        statusEl.textContent = `${name} re-attached with ${entries} entr${entries>1?'ies':'y'}. Found ${foundPicks} existing pick(s) already saved for them.`;
+        btn.disabled = false;
+        btn.textContent = 'Re-attach Player';
+        render();
+      });
+      content.querySelectorAll('.admin-remove-player').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const email = btn.dataset.email, pname = btn.dataset.name, n = Number(btn.dataset.entries);
+          if(btn.dataset.confirming !== 'yes'){
+            btn.dataset.confirming = 'yes';
+            btn.textContent = `Confirm remove ${pname}?`;
+            setTimeout(()=>{ if(btn.dataset.confirming==='yes'){ btn.dataset.confirming=''; btn.textContent='Remove Player'; } }, 4000);
+            return;
+          }
+          btn.disabled = true;
+          btn.textContent = 'Removing…';
+          for(let i=1; i<=n; i++){
+            await kvDelete('picks:' + email + ':' + i);
+          }
+          state.players = state.players.filter(p=>p.email !== email);
+          await savePlayersList();
+          delete state.picks[email];
+          render();
+        });
+      });
+    }
+    document.getElementById('admin-tab-results').addEventListener('click', ()=>{ state.adminSubTab='results'; render(); });
+    document.getElementById('admin-tab-odds').addEventListener('click', ()=>{ state.adminSubTab='odds'; render(); });
+    document.getElementById('admin-tab-pct').addEventListener('click', ()=>{ state.adminSubTab='pct'; render(); });
+    document.getElementById('admin-tab-all').addEventListener('click', ()=>{ state.adminSubTab='all'; render(); });
+  }
+
+  renderPickConfirmationModal();
+}
+
+function renderPickConfirmationModal(){
+  const existing = document.getElementById('pick-confirm-overlay');
+  if(existing) existing.remove();
+  if(!state.pickConfirmation) return;
+  const { team, opp, weekLabel, odds } = state.pickConfirmation;
+  const overlay = document.createElement('div');
+  overlay.id = 'pick-confirm-overlay';
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:420px; width:100%; background:linear-gradient(180deg, #0B1A14, #0F241B); border:2px solid var(--gold-dim); border-radius:8px; padding:24px; box-shadow:0 12px 40px rgba(0,0,0,0.6);">
+      <div style="font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gold); font-weight:800; margin-bottom:10px;">Pick Locked In</div>
+      <div style="font-size:15px; line-height:1.6; color:var(--chalk); margin-bottom:16px;">
+        You've selected ${logoImg(team,20)}<b style="color:var(--gold);">${team}</b> over ${logoImg(opp,20)}${opp} for <b>${weekLabel}</b>${odds ? ` at odds of <b style="color:var(--gold);">${odds}</b>` : ''}.
+        ${odds ? 'Those odds are locked in for tiebreaker purposes, even if the line moves later. ' : ''}No further picks are available for this week. Your selection becomes final the moment ${team} kicks off — after that, it cannot be changed.
+      </div>
+      <button class="btn-gold" id="pick-confirm-ok" style="width:100%;">Got It</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('pick-confirm-ok').addEventListener('click', ()=>{
+    state.pickConfirmation = null;
+    overlay.remove();
+    render();
+  });
+}
+
+(async function init(){
+  if(!API_BASE_URL || API_BASE_URL.indexOf('PASTE_YOUR') === 0){
+    document.getElementById('app').innerHTML = `
+      <div class="panel">
+        <div style="font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--red); margin-bottom:10px;">Setup Needed</div>
+        <div class="empty-note" style="padding:0;">
+          This app's backend isn't configured yet. Open this file, find the line
+          <code style="color:var(--gold);">const API_BASE_URL = 'PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';</code>
+          near the top of the script, and replace it with your Google Apps Script Web App URL.
+        </div>
+      </div>
+    `;
+    return;
+  }
+  const loadingTimers = [
+    setTimeout(()=>{ const el=document.getElementById('loading-msg'); if(el) el.textContent = 'Still loading — Google\'s server can take up to ~20 seconds to wake up on the first visit of the day.'; }, 4000),
+    setTimeout(()=>{ const el=document.getElementById('loading-msg'); if(el) el.textContent = 'Almost there — hang tight a little longer.'; }, 12000),
+  ];
+  const startupBatch = await kvBatchGet(['players-list', 'winners', 'pct-releases', 'odds']);
+  state.players = startupBatch['players-list'] ? JSON.parse(startupBatch['players-list']) : [];
+  state.winners = startupBatch['winners'] ? JSON.parse(startupBatch['winners']) : {};
+  state.pctReleases = startupBatch['pct-releases'] ? JSON.parse(startupBatch['pct-releases']) : {};
+  state.odds = startupBatch['odds'] ? JSON.parse(startupBatch['odds']) : {};
+  loadingTimers.forEach(t=>clearTimeout(t));
+  const profile = await loadMyProfile();
+  if(profile && profile.email){
+    const em = normEmail(profile.email);
+    const rec = state.players.find(p=>p.email===em);
+    state.currentEmail = em;
+    state.currentName = profile.name;
+    state.currentEntries = rec ? (rec.entries || 1) : 1;
+    state.currentEntry = 1;
+    state.picks[em] = {};
+    for(let i=1; i<=state.currentEntries; i++){
+      state.picks[em][i] = await loadPicks(em, i);
+    }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
